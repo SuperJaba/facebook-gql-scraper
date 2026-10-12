@@ -1,0 +1,25 @@
+[project]
+name = "facebook-gql-scraper"
+version = "0.5.1"
+description = "Scrape Facebook GraphQL data without an API key — profiles, posts, comments, reactions, groups, marketplace, search_engine."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "iso4217parse>=0.6.2",
+    "mini-racer>=0.14.1",
+    "price-parser>=0.5.1",
+    "requests>=2.31.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["facebook_gql_scraper"]
+
+[dependency-groups]
+dev = [
+    "twine>=7.0.0",
+]
