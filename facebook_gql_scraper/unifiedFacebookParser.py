@@ -139,7 +139,8 @@ def _parse_post_attachments(attachments):
                     video_url = None
                     for item in subattachment_node.get("media", {}).get("video_grid_renderer", {}).get("video", {}).get("videoDeliveryResponseFragment", {}).get("videoDeliveryResponseResult", {}).get("progressive_urls", []):
                         # loop and get the last one, the best one
-                        video_url = item.get("progressive_url", None)
+                        if item.get("failure_reason") is None:
+                            video_url = item.get("progressive_url", None)
 
                     result.append({
                         "type": "video",
@@ -172,7 +173,8 @@ def _parse_post_attachments(attachments):
                 video_url = None
                 for item in att.get("styles", {}).get("attachment", {}).get("media", {}).get("videoDeliveryResponseFragment", {}).get("videoDeliveryResponseResult", {}).get("progressive_urls", []):
                     # loop and get the last one, the best one
-                    video_url = item.get("progressive_url", None)
+                    if item.get("failure_reason") is None:
+                        video_url = item.get("progressive_url", None)
 
                 result.append({
                     "type": "video",
@@ -1086,7 +1088,8 @@ def parse_timelineAppCollection_aggregated_fb_shorts(data):
                     video_url = None
                     for item in attachment.get("media", {}).get("videoDeliveryResponseFragment", {}).get("videoDeliveryResponseResult", {}).get("progressive_urls", []):
                         # loop and get the last one, the best one
-                        video_url= item.get("progressive_url", None)
+                        if item.get("failure_reason") is None:
+                            video_url = item.get("progressive_url", None)
 
                     items.append({
                         "type": "video",
