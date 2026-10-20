@@ -1,12 +1,27 @@
 __pycache__/
 build/
 dist/
+dist_build/
 *.egg-info/
 *.egg
 
 .venv/
+.venv_win/
 
 graphql_debug/
 facebook_cookies.json
 facebook_state.json
 
+# Binaries & compiled runners
+*.exe
+*.lnk
+*Zone.Identifier*
+Uruchom_Facebook_OSINT.txt
+
+# Forensics vaults & history
+evidence_vault/
+profiles_history/
+*.html
+*.xlsx
+*.pdf
+*.csv
