@@ -374,6 +374,8 @@ class PaginatedIterator(Iterator[T]):
         self._cursor = None
         self._exhausted = False
         self._page_info = {}
+        self._seen_cursors = set()
+        self._consecutive_empty_pages = 0
 
     def __iter__(self) -> Iterator[T]:
         return self
@@ -396,19 +398,44 @@ class PaginatedIterator(Iterator[T]):
         """
         Request and load the next page of results.
         """
-        raw = self._request_fn(self._cursor)
-        parsed = self._parser(raw)
+        if self._exhausted:
+            return
+
+        try:
+            raw = self._request_fn(self._cursor)
+            parsed = self._parser(raw)
+        except Exception:
+            self._exhausted = True
+            return
 
         if parsed is None:
             self._exhausted = True
             return
 
-        raw_items, page_info = self._page_wrapper(parsed)
-        self._raw_buffer = list(raw_items)
-        self._page_info = page_info
+        try:
+            raw_items, page_info = self._page_wrapper(parsed)
+        except Exception:
+            self._exhausted = True
+            return
 
-        if page_info.get("has_next_page") and page_info.get("end_cursor"):
-            self._cursor = page_info["end_cursor"]
+        items = list(raw_items)
+        self._raw_buffer = items
+        self._page_info = page_info or {}
+
+        if not items:
+            self._consecutive_empty_pages += 1
+            if self._consecutive_empty_pages >= 2:
+                self._exhausted = True
+                return
+        else:
+            self._consecutive_empty_pages = 0
+
+        has_next = self._page_info.get("has_next_page", False)
+        end_cursor = self._page_info.get("end_cursor")
+
+        if has_next and end_cursor and end_cursor != self._cursor and end_cursor not in self._seen_cursors:
+            self._seen_cursors.add(end_cursor)
+            self._cursor = end_cursor
         else:
             self._exhausted = True
 
@@ -1025,6 +1052,13 @@ class Profile(FacebookModel):
         if biography is None:
             biography = safe_get(parsed_directory_intro, "parsed_data", "About", "directory_bio", "items", 0, "text")
 
+        # about_details (about_me / favorite_quotes)
+        parsed_about_details = _fetch_about("about_details")
+        about_me = safe_get(parsed_about_details, "parsed_data", "About", "about_me", "items", 0, "text")
+        if not biography and about_me:
+            biography = about_me
+        favorite_quotes = safe_get(parsed_about_details, "parsed_data", "About", "favorite_quotes", "items", 0, "text")
+
         # directory_category
         parsed_directory_category = _fetch_about("directory_category")
 
@@ -1242,6 +1276,7 @@ class Profile(FacebookModel):
             "friends_count": parsed_userCollectionIds["parsed_data"]["author_profile"]["friends_count"],
 
             "biography": biography,
+            "favorite_quotes": favorite_quotes,
             "category": category,
             "current_location": current_location,
             "hometown": hometown,
@@ -1285,6 +1320,7 @@ class Profile(FacebookModel):
                         "directory_contact_info": parsed_userCollectionIds["parsed_data"]["tabs"]["About"]["collections"]["directory_contact_info"],
                         "directory_privacy_and_legal_info": parsed_userCollectionIds["parsed_data"]["tabs"]["About"]["collections"]["directory_privacy_and_legal_info"],
                         "directory_names": parsed_userCollectionIds["parsed_data"]["tabs"]["About"]["collections"]["directory_names"],
+                        "about_details": parsed_userCollectionIds["parsed_data"]["tabs"]["About"]["collections"].get("about_details"),
                     },
                 },
                 "Followers": {
@@ -1451,6 +1487,16 @@ class Profile(FacebookModel):
         :rtype: str or None
         """
         return self._field("biography")
+
+    @property
+    def favorite_quotes(self) -> Optional[str]:
+        """
+        Favorite quotes of the profile.
+
+        :return: Favorite quotes.
+        :rtype: str or None
+        """
+        return self._field("favorite_quotes")
 
     @property
     def category(self) -> Optional[str]:
@@ -1836,6 +1882,55 @@ class Profile(FacebookModel):
             query_variables={"id": collectionId},
         )
 
+
+    def get_friends(self) -> PaginatedIterator["Profile"]:
+        """
+        Iterate over friends of this user.
+
+        :return: Iterator yielding :class:`Profile` objects.
+        :rtype: PaginatedIterator
+        """
+        userTimelineAppCollectionPageItemsGraphQL = ProfileCometAppCollectionListRendererPaginationQueryGraphQL(self._context)
+        collectionId = self._field(("tabs", "Friends", "collections", "friends_all"))
+        if collectionId is None:
+            collectionId = self._field(("tabs", "Followers", "collections", "friends_all"))
+
+        if collectionId is None:
+            return PaginatedIterator.empty()
+
+        def request_fn(cursor):
+            return userTimelineAppCollectionPageItemsGraphQL.send(
+                collectionId=collectionId, cursor=cursor
+            ).text
+
+        def page_wrapper(parsed):
+            raw_items = [
+                {
+                    "id": item["id"],
+                    "name": item["name"],
+                    "url": item["url"],
+                    "profile_picture_url": item["profile_picture_url"],
+                    "is_verified": item["is_verified"],
+                }
+                for item in parsed["parsed_data"]["items"]
+            ]
+            page_info = {
+                "has_next_page": parsed["parsed_data"]["page_info"]["has_next_page"],
+                "end_cursor":    parsed["parsed_data"]["page_info"]["end_cursor"],
+            }
+            return raw_items, page_info
+
+        def item_wrapper(raw):
+            return Profile(self._context, raw)
+
+        return PaginatedIterator(
+            request_fn=request_fn,
+            parser=self._context.parse_graphql_response,
+            page_wrapper=page_wrapper,
+            item_wrapper=item_wrapper,
+            iterator_type="timelineapp_collection_page_items",
+            query_variables={"id": collectionId},
+        )
 
     def get_friends_followers(self) -> PaginatedIterator["Profile"]:
         """

@@ -193,6 +193,12 @@ class FacebookContext:
 
         m = re.search(r'\{"name":"fb_dtsg","value":"([^"]+)"\}', html)
         if not m:
+            m = re.search(r'\["DTSGInitialData",\s*\[\],\s*\{"token":"([^"]+)"\}', html)
+        if not m:
+            m = re.search(r'\["DTSGInitData",\s*\[\],\s*\{"token":"([^"]+)"\}', html)
+        if not m:
+            m = re.search(r'"DTSGInitialData"[^}]*?"token":"([^"]+)"', html)
+        if not m:
             raise DtsgTokenFetchError("Could not find fb_dtsg")
 
         self.fb_dtsg = m.group(1)
@@ -310,6 +316,7 @@ class FacebookContext:
             headers={
                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             },
+            timeout=25,
         )
         if self._check_session_dead(response):
             raise SessionExpiredError(
@@ -340,7 +347,7 @@ class FacebookContext:
         }
 
         response = self.session.post(
-            "https://web.facebook.com/api/graphql/", data=payload
+            "https://web.facebook.com/api/graphql/", data=payload, timeout=25
         )
         if self._check_session_dead(response):
             raise SessionExpiredError(

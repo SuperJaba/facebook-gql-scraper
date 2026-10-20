@@ -1,5 +1,6 @@
 import json
 import base64
+import re
 
 import iso4217parse
 from price_parser import Price
@@ -23,6 +24,7 @@ FIXED_TABS_SCHEMA = {
         "directory_contact_info",
         "directory_privacy_and_legal_info",
         "directory_names",
+        "about_details",
     ],
     "Followers": [
         "followers",
@@ -375,14 +377,20 @@ def parse_profile_collection_ids(data: dict) -> dict:
     followees_count = None
     friends_count = None
 
-    for content in user.get("profile_social_context").get("content", []):
-        text = content.get("text", {}).get("text")
-        if text.endswith("friends"):
-            friends_count = text.removesuffix("friends").strip()
-        if text.endswith("followers"):
-            followers_count = text.removesuffix("followers").strip()
-        if text.endswith("following"):
-            followees_count = text.removesuffix("following").strip()
+    for content in (user.get("profile_social_context") or {}).get("content", []):
+        text = (content.get("text") or {}).get("text", "")
+        if not text:
+            continue
+        clean_text = text.lower()
+        match = re.search(r"^([\d\s.,KkMmbB]+)", text.strip())
+        num_str = match.group(1).strip() if match else text.strip()
+        if any(w in clean_text for w in ["friend", "znajom"]):
+            if "wspólnych" not in clean_text and "mutual" not in clean_text:
+                friends_count = num_str
+        elif any(w in clean_text for w in ["follower", "obserwuj"]):
+            followers_count = num_str
+        elif any(w in clean_text for w in ["following", "obserwowane", "obserwowani"]):
+            followees_count = num_str
 
     author_profile = {
         "id": user.get("id", None),
@@ -406,6 +414,22 @@ def parse_profile_collection_ids(data: dict) -> dict:
         }
         for tab_name, keys in FIXED_TABS_SCHEMA.items()
     }
+
+    SECTION_TYPE_MAP = {
+        "ABOUT": "About",
+        "PHOTOS": "Photos",
+        "FRIENDS": "Friends",
+        "FOLLOWERS": "Followers",
+        "REELS": "Reels",
+    }
+    TAB_KEY_MAP = {
+        "about": "About",
+        "photos": "Photos",
+        "friends": "Friends",
+        "followers": "Followers",
+        "reels_tab": "Reels",
+        "owner_reels": "Reels",
+    }
     
     sections = (
         user.get("profile_tabs", {})
@@ -416,9 +440,15 @@ def parse_profile_collection_ids(data: dict) -> dict:
 
     for edge in sections:
         node = edge.get("node", {})
-        tab_name = node.get("name")
+        sec_type = (node.get("section_type") or "").upper()
+        tab_k = (node.get("tab_key") or "").lower()
+        raw_name = node.get("name")
+
+        tab_name = SECTION_TYPE_MAP.get(sec_type) or TAB_KEY_MAP.get(tab_k)
+        if not tab_name and raw_name in parsed_tabs:
+            tab_name = raw_name
         
-        if tab_name in parsed_tabs:
+        if tab_name and tab_name in parsed_tabs:
             # Extract Tab/Section ID
             parsed_tabs[tab_name]["id"] = node.get("id")
             
