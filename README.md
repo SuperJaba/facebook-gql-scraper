@@ -39,6 +39,8 @@ When Facebook updates its GraphQL operation Doc IDs, the scraper automatically r
                            New Doc ID ────┘
 ```
 
+See the full [Documentation](https://XD-MHLOO.github.io/facebook-gql-scraper/)
+
 ---
 
 ## Installation
