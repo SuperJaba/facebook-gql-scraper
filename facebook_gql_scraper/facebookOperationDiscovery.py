@@ -147,7 +147,7 @@ class FacebookOperationDiscovery:
                     v8.eval(source, timeout_sec=self.timeout_sec)
 
             except Exception:
-                logger.debug(
+                logger.warning(
                     "Could not evaluate Facebook script %s",
                     script_url,
                     exc_info=True,

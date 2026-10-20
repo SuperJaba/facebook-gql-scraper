@@ -5,17 +5,15 @@ import logging
 import os
 import re
 from datetime import datetime, timezone, timedelta, date
+from typing import Optional
 
 from .facebookConsolidater import consolidate_jsonl
 from .unifiedFacebookParser import parse_facebook_payload
-from .exceptions import DocIdStillInvalidError, DtsgTokenStillInvalidError, DtsgTokenFetchError, SessionExpiredError
+from .exceptions import DocIdStillInvalidError, DtsgTokenStillInvalidError, DtsgTokenFetchError, SessionExpiredError, SchemaChangedError
 from .facebookNoiseRemoval import remove_raw_facebook_json_noise
 from .facebookOperationDiscovery import FacebookOperationDiscovery
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] - %(asctime)s - %(message)s"
-)
+logger = logging.getLogger(__name__)
 
 class FacebookContext:
     """
@@ -27,7 +25,6 @@ class FacebookContext:
     :param state_file: Path to the saved Facebook request state.
     :param user_agent: User-Agent used for Facebook requests.
     :param proxy: Proxy URL used for Facebook HTTP/HTTPS requests. Supports proxies with optional authentication, e.g. ``http://user:password@host:port``.
-    :param logger: Logger used for messages.
     :param quiet: Whether to suppress progress messages.
     :param debug: Whether to save debug request/response data.
     :param debug_dir: Directory for debug files.
@@ -35,19 +32,24 @@ class FacebookContext:
 
     def __init__(
             self, 
-            cookies_file="facebook_cookies.json", 
-            state_file="facebook_state.json", 
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
-            proxy=None,
-            logger=None, 
-            quiet=False, 
-            debug=False, 
-            debug_dir= "graphql_debug"
+            cookies_file: str = "facebook_cookies.json", 
+            state_file: str = "facebook_state.json", 
+            user_agent: Optional[str] = None,
+            proxy: Optional[str] = None,
+            quiet: bool = False, 
+            debug: bool = False, 
+            debug_dir: str = "graphql_debug"
         ):
         self.quiet = quiet
         self.debug = debug
         self.debug_dir = debug_dir
-        self.logger = logger or logging.getLogger("facebook_gql_scraper")
+        if user_agent is None:
+            user_agent = (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/151.0.0.0 Safari/537.36"
+            )
+
         self.session = requests.Session()
         self.session.headers.update({
                     "user-agent": user_agent,
@@ -95,10 +97,10 @@ class FacebookContext:
         self._load_cookies()
         self._load_state()
 
-    def log(self, message, *args, **kwargs):
-        """Progress messages; suppressed by quiet."""
+    def progress(self, message):
+        """User-facing status. Visible by default. Silenced by quiet=True."""
         if not self.quiet:
-            self.logger.info(message, *args, **kwargs)
+            print(message, flush=True)
 
     def _load_cookies(self):
         """Load cookies from the cookies file into the session. No-op if file missing."""
@@ -158,25 +160,24 @@ class FacebookContext:
             return True
         return False
 
-    def _is_doc_id_invalid(self,response):
-        """Return True if the response indicates an invalid/rotated doc_id."""
-        text = response.text
-
+    def _classify_error(self, response) -> Optional[str]:
+        """Return 'schema', 'doc_id', or None from a GraphQL error response."""
         try:
-            # If the body is a single JSON object
-            data = json.loads(text)
+            data = json.loads(response.text)
         except json.JSONDecodeError:
-            return False
-
+            return None
         if not isinstance(data, dict):
-            return False
+            return None
 
-        errors = data.get("errors") or []
-        for err in errors:
-            msg = (err or {}).get("message", "")
+        messages = [(err or {}).get("message", "") for err in (data.get("errors") or [])]
+
+        for msg in messages:
+            if "missing_required_variable_value" in msg:
+                return "schema"
+        for msg in messages:
             if "GraphQL document with ID" in msg and "was not found" in msg:
-                return True
-        return False
+                return "doc_id"
+        return None
 
     # ------------------------------------------------------------------
     # dtsg handling
@@ -187,7 +188,7 @@ class FacebookContext:
         if self.fb_dtsg:
             return self.fb_dtsg
 
-        self.log("Fetching fb_dtsg ...")
+        self.progress("Fetching fb_dtsg ...")
         html = self.get("https://www.facebook.com").text
 
         m = re.search(r'\{"name":"fb_dtsg","value":"([^"]+)"\}', html)
@@ -255,7 +256,7 @@ class FacebookContext:
         # for cached_url, cached_ops in self.page_operations.items():
         #     doc_id = cached_ops.get(operation_name)
         #     if doc_id:
-        #         self.log(
+        #         logger.warning(
         #             f"Operation {operation_name!r} found on cached page "
         #             f"{cached_url!r} but not on {reference_page_url!r}; reusing."
         #         )
@@ -264,7 +265,8 @@ class FacebookContext:
         #         return doc_id
 
         # 3. discovery
-        self.log(f"Discovering doc_id for {operation_name} ...")
+        self.progress(f"Discovering doc_id ...")
+        logger.info(f"Discovering doc_id for {operation_name} ...")
         discovered = self.operation_discovery.discover_operation(reference_page_url)
 
         # fill both caches
@@ -287,6 +289,11 @@ class FacebookContext:
             page_ops.pop(operation_name, None)
         self._save_state()
 
+    def reload_cookies(self):
+        """Re-read the cookies file into the current session."""
+        self.session.cookies.clear()
+        self._load_cookies()
+        
     def get(self, url):
         """
         GET a Facebook HTML page as a browser navigation.
@@ -321,7 +328,8 @@ class FacebookContext:
         doc_id = self._resolve_doc_id(operation_name, reference_page_url)
         fb_dtsg = self._get_fb_dtsg()
 
-        self.log(f"Sending FacebookGql Request ({operation_name})...")
+        self.progress(f"Sending FacebookGql Request ...")
+        logger.info(f"Sending FacebookGql Request ({operation_name})")
 
         payload = {
             "doc_id": doc_id,
@@ -345,10 +353,25 @@ class FacebookContext:
                 doc_id,
                 response,
             )
-            
+
+        reason = self._classify_error(response)
+
+        # --- schema changed: not recoverable ---
+        if reason == "schema":
+            logger.error(
+                "GraphQL schema changed for %s — variables no longer match",
+                operation_name,
+            )
+            raise SchemaChangedError(
+                f"Facebook GraphQL schema for {operation_name!r} required variables no longer match. "
+                f"Check for a new update of facebook-gql-scraper, or open an issue: "
+                f"https://github.com/XD-MHLOO/facebook-gql-scraper/issues"
+            )
+    
         # --- doc-id rotation ---
-        if _retry and self._is_doc_id_invalid(response):
-            self.log("Facebook rotated the doc_id. Re-discovering ...")
+        if _retry and reason == "doc_id":
+            self.progress("Facebook rotated the doc_id. Re-discovering ...")
+            logger.info("doc_id invalid for %s", operation_name)
             self._invalidate_doc_id(operation_name, reference_page_url)
 
             retry_response = self.post(
@@ -357,7 +380,7 @@ class FacebookContext:
                 variables,
                 _retry=False,
             )
-            if self._is_doc_id_invalid(retry_response):
+            if self._classify_error(retry_response) == "doc_id":
                 raise DocIdStillInvalidError(
                     f"'{operation_name}' doc id still invalid after re-discovery."
                 )
@@ -365,7 +388,8 @@ class FacebookContext:
 
         # --- dtsg rejection ---
         if _retry and self._is_dtsg_invalid(response):
-            self.log("Facebook rejected fb_dtsg. Refreshing token ...")
+            self.progress("Refreshing fb_dtsg token ...")
+            logger.info("Facebook rejected fb_dtsg, refreshing from error response")
 
             if self._refresh_dtsg_from_response(response):
                 retry_response = self.post(
@@ -375,7 +399,7 @@ class FacebookContext:
                     _retry=False,
                 )
 
-                if self._is_doc_id_invalid(retry_response):
+                if self._is_dtsg_invalid(retry_response):
                     raise DtsgTokenStillInvalidError(
                         f"still invalid after using a new fb_dstg token."
                     )
@@ -449,7 +473,7 @@ class FacebookContext:
             # ---- 5. Parse (only if consolidate succeeded) ----
             parsed = parse_facebook_payload(consolidated_json)
         else:
-            self.log(f"Failed to consolidate ({operation_name}); saving request/response only.")
+            logger.warning(f"Failed to consolidate ({operation_name}); saving request/response only.")
 
         debug_data = {
             "request": {
@@ -473,7 +497,7 @@ class FacebookContext:
         with open(filepath_parsed, "w", encoding="utf-8") as f:
             json.dump(debug_data, f, indent=2, ensure_ascii=False)
 
-        self.log(f"GraphQL debug data saved. ({operation_name})")
+        logger.info("GraphQL debug data saved: %s", filepath_parsed)
 
 class FacebookGraphQL:
     OPERATION_NAME: str = None
@@ -1185,12 +1209,14 @@ class MarketplacePDPContainerQueryGraphQL(FacebookGraphQL):
         "referralCode":               "null",
         "referralSurfaceString":      "search",
         "scale":                      1,
+        "shouldFetchLoggedOutSimilarListings": False, 
         "targetId":                   None,
         "useDefaultActor":            False,
         "__relay_internal__pv__MarketplacePDPCometSimilarListingsrelayprovider": False,
         "__relay_internal__pv__MarketplacePDPShouldShowRelatedSearchesrelayprovider": True,
         "__relay_internal__pv__MarketplacePDPShouldShowLoggedOutSellerTrustrelayprovider": False,
         "__relay_internal__pv__ShouldUpdateMarketplaceBoostListingBoostedStatusrelayprovider": False,
+        "__relay_internal__pv__MarketplacePDPIsLoggedOutrelayprovider": False,
         "__relay_internal__pv__CometUFIShareActionMigrationrelayprovider": True,
         "__relay_internal__pv__GHLShouldChangeSponsoredDataFieldNamerelayprovider": True,
         "__relay_internal__pv__GHLShouldChangeAdIdFieldNamerelayprovider": True,

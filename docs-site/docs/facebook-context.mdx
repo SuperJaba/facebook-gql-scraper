@@ -1,0 +1,65 @@
+---
+id: facebook-context
+title: FacebookContext
+sidebar_label: FacebookContext
+slug: /facebook-context
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# FacebookContext
+
+A Facebook request context.
+
+Manages the shared session, cookies, and GraphQL request state.
+
+## Constructor
+
+Creates a Facebook request context.
+
+<code className="signature">FacebookContext(cookies_file, state_file, user_agent, proxy, quiet, debug, debug_dir)</code>
+
+## Parameters
+
+<Props>
+  <Prop name="cookies_file" type="str">
+    Path to the Facebook cookies JSON file. Defaults to <code>"facebook_cookies.json"</code>.
+  </Prop>
+  <Prop name="state_file" type="str">
+    Path where request state is persisted between runs. Defaults to <code>"facebook_state.json"</code>.
+  </Prop>
+  <Prop name="user_agent" type="str | None">
+    User-Agent for Facebook requests. When not provided, a fallback default is used.
+  </Prop>
+  <Prop name="proxy" type="str | None">
+    Proxy URL for HTTP/HTTPS requests, e.g. <code>{`http://user:password@host:port`}</code>.
+  </Prop>
+  <Prop name="quiet" type="bool">
+    When <code>True</code>, suppresses progress output. Defaults to <code>False</code>.
+  </Prop>
+  <Prop name="debug" type="bool">
+    When <code>True</code>, saves every GraphQL request and response to disk. Defaults to <code>False</code>.
+  </Prop>
+  <Prop name="debug_dir" type="str">
+    Directory where debug files are written. Defaults to <code>"graphql_debug"</code>.
+  </Prop>
+</Props>
+
+## Methods
+
+<Props>
+  <Prop name="reload_cookies()" type="None">
+    Re-read <code>cookies_file</code> into the current session.
+  </Prop>
+</Props>
+
+## Usage
+
+```python
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+
+# Pass the context to any model constructor
+user = fgs.Profile.from_id(context, id="100084254631043")
+```

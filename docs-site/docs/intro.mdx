@@ -1,0 +1,79 @@
+---
+id: intro
+title: Introduction
+sidebar_label: Introduction
+slug: /
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Facebook GraphQL Scraper
+
+Scrape Facebook GraphQL data **without an API key** — profiles, posts, comments,
+reactions, groups, marketplace, and the search engine.
+
+The scraper is designed to be **fast**, **lightweight**, and **reliable**.
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL-based" default>
+
+Fetches data directly through Facebook's internal GraphQL endpoints — the same
+endpoints the web app uses.
+
+</TabItem>
+<TabItem value="no-html" label="No HTML parsing">
+
+No CSS selectors, no DOM traversal. Brittle UI changes don't break the scraper.
+
+</TabItem>
+<TabItem value="no-browser" label="No headless browser">
+
+No Playwright, no Puppeteer, no Selenium. Just HTTP + GraphQL.
+
+</TabItem>
+<TabItem value="doc-id" label="Auto Doc ID rediscovery">
+
+When Facebook rotates GraphQL operation Doc IDs, the scraper rediscovers them
+with a lightweight V8 runtime (`PyMiniRacer`).
+
+</TabItem>
+</Tabs>
+
+import Link from '@docusaurus/Link';
+
+## Get started
+
+<a className="next" href="/facebook-gql-scraper/quickstart">Quick Start →</a>
+
+## How it works
+
+Existing scrapers break easily — they parse HTML, rely on CSS selectors, run a headless browser, or use browser automation. The first two are brittle: Facebook changes its markup and the selectors stop matching. The last two are resource-heavy and easy for Facebook to flag.
+
+This scraper targets Facebook's internal GraphQL endpoints directly over HTTP.
+
+Facebook rotates the GraphQL `doc_id` every few days. When that happens, the scraper evaluates Facebook's JavaScript bundle in an embedded V8 runtime (`PyMiniRacer`) to discover the current `doc_id`, then retries the request.
+
+
+```text
+               Facebook Gql Scraper
+                        │
+                        ▼
+                  ┌───────────┐
+                  │  Doc ID   │◄──────────────┐
+                  └─────┬─────┘               │
+                        │                     │
+                        ▼                     │
+                  GraphQL Request             │
+                        │                     │
+                  ┌─────┴─────────┐           │
+                  │               │           │
+            [Doc Id Valid]  [Doc Id Invalid]  │
+                  │               │           │
+                  ▼               ▼           │
+               Scrape       Mini JavaScript   │
+                                  V8          │
+                                  │           │
+                                  ▼           │
+                               New Doc ID ────┘
+```

@@ -1,0 +1,25 @@
+---
+id: seller
+title: Seller
+sidebar_label: Seller
+slug: /models/seller
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# Seller
+
+A Marketplace seller. Returned by [`MarketplaceListing.seller`](/models/marketplace-listing#properties) on `FOR_SALE_ITEM` listings.
+
+## Properties
+
+<Props>
+  <Prop name="profile" type="Profile | None" href="/models/profile">The seller's Facebook profile.</Prop>
+  <Prop name="is_verified" type="bool | None">Whether the seller has a verified badge.</Prop>
+  <Prop name="seller_ratings_average" type="float | None">Average seller-only rating.</Prop>
+  <Prop name="seller_ratings_count" type="int | None">Total seller-only rating count.</Prop>
+  <Prop name="seller_ratings_are_private" type="bool | None">Whether seller-only ratings are hidden.</Prop>
+  <Prop name="combined_ratings_average" type="float | None">Average combined rating.</Prop>
+  <Prop name="combined_ratings_count" type="int | None">Total combined rating count.</Prop>
+  <Prop name="combined_ratings_are_private" type="bool | None">Whether combined ratings are hidden.</Prop>
+</Props>

@@ -73,7 +73,9 @@ class DtsgTokenStillInvalidError(FacebookGqlScraperException):
 class DtsgTokenFetchError(FacebookGqlScraperException):
     """Failed to obtain the fb_dtsg token from Facebook."""
 
-
+class SchemaChangedError(FacebookGqlScraperException):
+    """Facebook's GraphQL schema for an operation changed — variables no longer match."""
+    
 # Invalid usage  
 class MissingParentError(FacebookGqlScraperException):
     """A model needs its parent, but none was provided."""

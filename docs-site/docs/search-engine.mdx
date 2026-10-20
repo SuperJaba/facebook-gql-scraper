@@ -1,0 +1,78 @@
+---
+id: search-engine
+title: SearchEngine
+sidebar_label: SearchEngine
+slug: /search-engine
+---
+
+import Link from '@docusaurus/Link';
+import { Props, Prop } from '@site/src/components/Props';
+
+# SearchEngine
+
+Search Facebook for profiles, posts, groups, and Marketplace listings.
+
+SearchEngine can be created with:
+
+<code className="signature">SearchEngine(context: <Link to="/facebook-context">FacebookContext</Link>) -> <Link to="/search-engine">SearchEngine</Link></code>
+
+## Methods
+
+### search
+
+<Props>
+  <Prop
+    name="search(query, filter_type, exact_match)"
+    type={
+      <>
+        <Link to="/models/profile">Profile</Link>
+        {' | '}
+        <Link to="/models/post">Post</Link>
+        {' | '}
+        <Link to="/models/group">Group</Link>
+      </>
+    }
+    iterator
+  >
+    Search for profiles, posts, or groups.
+  </Prop>
+</Props>
+
+<Props>
+  <Prop name="filter_type" type="str"><code>"all"</code>, <code>"profile"</code>, <code>"post"</code>, or <code>"group"</code>. <code>"all"</code> yields a mix of <code>Profile</code>, <code>Post</code>, and <code>Group</code>.</Prop>
+  <Prop name="exact_match" type="bool"><code>True</code> requires an exact match. Defaults to <code>False</code> (fuzzy matching).</Prop>
+</Props>
+
+### search_marketplace
+
+<Props>
+<Prop name="search_marketplace(query, is_stock_available, filter_location_latitude, filter_location_longitude, filter_price_lower_bound, filter_price_upper_bound, filter_radius_km, item_condition, last_n_days, sort_by)">
+    Search Marketplace listings.
+  </Prop>
+</Props>
+
+<Props>
+  <Prop name="is_stock_available" type="bool">Restrict to in-stock items.</Prop>
+  <Prop name="filter_location_latitude" type="float">Latitude of the search center.</Prop>
+  <Prop name="filter_location_longitude" type="float">Longitude of the search center.</Prop>
+  <Prop name="filter_price_lower_bound" type="int">Minimum price.</Prop>
+  <Prop name="filter_price_upper_bound" type="int">Maximum price.</Prop>
+  <Prop name="filter_radius_km" type="int">Search radius in kilometers.</Prop>
+  <Prop name="item_condition" type="str">Item condition: <code>"new"</code>, <code>"used_like_new"</code>, <code>"used_good"</code>, or <code>"used_fair"</code>.</Prop>
+  <Prop name="last_n_days" type="int">Only include listings posted within the last N days.</Prop>
+  <Prop name="sort_by" type="str">Sort order: <code>"PRICE_DESCEND"</code>, <code>"PRICE_ASCEND"</code>, <code>"DISTANCE_ASCEND"</code>, or <code>"CREATION_TIME_DESCEND"</code>.</Prop>
+</Props>
+
+## Example
+
+```python
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+
+engine = fgs.SearchEngine(context)
+
+for profile in engine.search("Ishowspeed", filter_type="profile", exact_match=True):
+    print(profile.id, profile.name)
+```
+

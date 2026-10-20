@@ -1,0 +1,42 @@
+---
+id: quickstart
+title: Quick Start
+sidebar_label: Quick Start
+slug: /quickstart
+---
+
+import Link from '@docusaurus/Link';
+
+# Quick Start
+
+## Install
+
+```bash
+pip install facebook-gql-scraper
+```
+
+Python 3.10+
+
+## Export cookies
+
+Export your Facebook session cookies as JSON and save as `facebook_cookies.json`.
+
+Use any cookie export extension, e.g.  [Cookie-Editor](https://addons.mozilla.org/en-US/firefox/addon/cookie-editor/) (Firefox) or [EditThisCookie](https://chromewebstore.google.com/detail/editthiscookie-v3/ojfebgpkimhlhcblbalbfjblapadhbol?utm_source=item-share-cb) (Chrome).
+
+
+## Fetch a profile
+
+```python
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+user = fgs.Profile.from_id(context, id="100084254631043")
+
+print(user.name, user.biography, user.followers_count)
+```
+
+## Next steps
+
+- **Fetch a user's followees** — [`Profile.get_followees()`](/models/profile#methods)
+- **Fetch posts in a group** — [`Group.get_posts()`](/models/group#methods)
+- **Search Marketplace** — [`SearchEngine.search_marketplace()`](/search-engine#search_marketplace)

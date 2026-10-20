@@ -1,0 +1,154 @@
+---
+id: marketplace-listing
+title: MarketplaceListing
+sidebar_label: MarketplaceListing
+slug: /models/marketplace-listing
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Link from '@docusaurus/Link';
+import { Props, Prop } from '@site/src/components/Props';
+
+# MarketplaceListing
+
+A Facebook Marketplace listing.
+
+MarketplaceListing can be created with:
+
+<code className="signature">MarketplaceListing.from_id(context: <Link to="/facebook-context">FacebookContext</Link>, id: str) -> <Link to="/models/marketplace-listing">MarketplaceListing</Link></code>
+
+## Listing types
+
+<Tabs>
+<TabItem value="forsale" label="FOR_SALE_ITEM" default>
+
+A regular Marketplace listing sold by a Facebook user.
+
+</TabItem>
+<TabItem value="partner" label="PARTNER_LISTING">
+
+A partner listing, e.g. eBay. Has <code>partner_seller</code> and shipping metadata.
+
+</TabItem>
+</Tabs>
+
+## Properties
+
+**Identity**
+
+<Props>
+  <Prop name="id" type="str">Listing ID.</Prop>
+  <Prop name="title" type="str | None">Listing title.</Prop>
+  <Prop name="description" type="str | None">Listing description.</Prop>
+  <Prop name="url" type="str | None">Listing URL.</Prop>
+  <Prop name="post_id" type="str | None">ID of the underlying post.</Prop>
+  <Prop name="creation_time" type="int | None">Unix timestamp of when the listing was created. <em>FOR_SALE_ITEM only.</em></Prop>
+</Props>
+
+**Pricing**
+
+<Props>
+  <Prop name="currency" type="str | None">Currency code, e.g. <code>"USD"</code>.</Prop>
+  <Prop name="price" type="float | None">Current listing price.</Prop>
+  <Prop name="strikethrough_price" type="float | None">Original price before any reduction. <em>FOR_SALE_ITEM only.</em></Prop>
+</Props>
+
+**Location**
+
+<Props>
+  <Prop name="location_text" type="str | None">Human-readable location.</Prop>
+  <Prop name="latitude" type="float | None">Latitude of the listing. <em>FOR_SALE_ITEM only.</em></Prop>
+  <Prop name="longitude" type="float | None">Longitude of the listing. <em>FOR_SALE_ITEM only.</em></Prop>
+</Props>
+
+**Status** *(FOR_SALE_ITEM only)*
+
+<Props>
+  <Prop name="is_live" type="bool | None">Whether the listing is currently live.</Prop>
+  <Prop name="is_pending" type="bool | None">Whether the listing is pending review.</Prop>
+  <Prop name="is_sold" type="bool | None">Whether the listing has been sold.</Prop>
+  <Prop name="is_hidden" type="bool | None">Whether the listing is hidden from search.</Prop>
+</Props>
+
+**Product details**
+
+<Props>
+  <Prop name="product_details_type" type="str | None">
+    Listing type, either <code>"FOR_SALE_ITEM"</code> or <code>"PARTNER_LISTING"</code>.
+  </Prop>
+  <Prop name="shipping_cost_text" type="str | None">Shipping cost as a display string. <em>PARTNER_LISTING only.</em></Prop>
+  <Prop name="has_shipping_cost" type="bool | None">Whether shipping is charged. <em>PARTNER_LISTING only.</em></Prop>
+  <Prop name="delivery_window_text" type="str | None">Estimated delivery window. <em>PARTNER_LISTING only.</em></Prop>
+  <Prop name="product_details_page_uri" type="str | None">URI of the partner product page. <em>PARTNER_LISTING only.</em></Prop>
+</Props>
+
+**Category / commerce**
+
+<Props>
+  <Prop name="category_id" type="str | None">Marketplace category ID.</Prop>
+  <Prop name="attributes" type="list[dict] | None">
+    Product attributes as <code>{`{"name", "value"}`}</code> entries, e.g. condition.
+  </Prop>
+  <Prop name="delivery_types" type="list[str] | None">Supported delivery methods. <em>FOR_SALE_ITEM only.</em></Prop>
+  <Prop name="is_shipping_offered" type="bool | None">Whether shipping is offered.</Prop>
+  <Prop name="is_purchase_protected" type="bool | None">Whether the purchase is protected. <em>FOR_SALE_ITEM only.</em></Prop>
+  <Prop name="inventory_count" type="int | None">Remaining inventory. <em>FOR_SALE_ITEM only.</em></Prop>
+  <Prop name="messaging_enabled" type="bool | None">Whether messaging is enabled. <em>FOR_SALE_ITEM only.</em></Prop>
+</Props>
+
+**Media**
+
+<Props>
+  <Prop
+    name="listing_photos"
+    type={
+      <>
+        list[<Link to="/models/photo">Photo</Link>] | None
+      </>
+    }
+  >
+    Listing photos.
+  </Prop>
+  <Prop
+    name="videos"
+    type={
+      <>
+        list[<Link to="/models/video">Video</Link>] | None
+      </>
+    }
+  >
+    Listing videos.
+  </Prop>
+</Props>
+
+**Seller** *(FOR_SALE_ITEM only)*
+
+<Props>
+  <Prop name="seller" type="Seller | None" href="/models/seller">
+    Seller information, including the seller's profile and ratings.
+  </Prop>
+</Props>
+
+**Partner seller** *(PARTNER_LISTING only)*
+
+<Props>
+  <Prop name="partner_seller" type="PartnerSeller | None" href="/models/partner-seller">
+    Partner seller information, including brand, reviews, and shipping metadata.
+  </Prop>
+</Props>
+
+## Example
+
+```python
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+
+listing = fgs.MarketplaceListing.from_id(context, id="123456789876789")
+
+print(listing.description)
+
+for photo in listing.listing_photos or []:
+    print(photo.image_url)
+```

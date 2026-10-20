@@ -1,0 +1,20 @@
+---
+id: group-member
+title: GroupMember
+sidebar_label: GroupMember
+slug: /models/group-member
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# GroupMember
+
+A member of a Facebook group. Returned by [`Group.get_members()`](/models/group#methods).
+
+## Properties
+
+<Props>
+  <Prop name="join_status" type="str | None">Membership or join status of the user.</Prop>
+  <Prop name="contribution_score" type="str | None">Contribution score associated with the member.</Prop>
+  <Prop name="profile" type="Profile | None" href="/models/profile">Profile of the group member.</Prop>
+</Props>

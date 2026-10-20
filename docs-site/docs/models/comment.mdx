@@ -1,0 +1,76 @@
+---
+id: comment
+title: Comment
+sidebar_label: Comment
+slug: /models/comment
+---
+
+import Link from '@docusaurus/Link';
+import { Props, Prop } from '@site/src/components/Props';
+
+# Comment
+
+A Facebook comment.
+
+## Properties
+
+<Props>
+  <Prop name="id" type="str">Comment ID.</Prop>
+  <Prop name="text" type="str | None">Body text of the comment.</Prop>
+  <Prop name="created_time" type="int | None">Unix timestamp of when the comment was created.</Prop>
+  <Prop name="reaction_count" type="str | None">Number of reactions on the comment.</Prop>
+  <Prop name="reply_count" type="int | None">Number of direct replies.</Prop>
+  <Prop
+    name="attachments"
+    type={
+      <>
+        list[
+        <Link to="/models/photo">Photo</Link>
+        {' | '}
+        <Link to="/models/video">Video</Link>
+        {' | '}
+        <Link to="/models/generic-media">GenericMedia</Link>
+        {' | '}
+        <Link to="/models/sticker">Sticker</Link>
+        ] | None
+      </>
+    }
+  >
+    Attached media.
+  </Prop>
+  <Prop name="owner" type="Profile | None" href="/models/profile">The comment's author.</Prop>
+  <Prop name="post" type="Post | None" href="/models/post">The parent post.</Prop>
+</Props>
+
+## Methods
+
+All methods return a [`PaginatedIterator`](/paginated-iterator) of model objects.
+
+<Props>
+  <Prop name="get_replies()" type="Comment" href="/models/comment" iterator>Direct replies to the comment.</Prop>
+  <Prop name="get_reactors()" type="Reactor" href="/models/reactor" iterator>Users who reacted to the comment.</Prop>
+</Props>
+
+## Example
+
+```python
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+
+post = fgs.Post.from_id(context, id="253053527513133")
+
+for comment in post.get_comments():
+    print(comment.id, comment.text)
+        
+    for comment_reply in comment.get_replies():
+        print(comment_reply.id, comment_reply.text)
+
+        # (Facebook's max reply depth)
+        for subreply in comment_reply.get_replies():
+            print(subreply.id, subreply.text)
+```
+
+:::note
+Facebook replies max depth is 2.
+:::

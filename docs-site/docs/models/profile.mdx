@@ -1,0 +1,162 @@
+---
+id: profile
+title: Profile
+sidebar_label: Profile
+slug: /models/profile
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { Props, Prop } from '@site/src/components/Props';
+import Link from '@docusaurus/Link';
+
+# Profile
+
+A Facebook user profile.
+
+Profile can be created with:
+
+<Tabs>
+<TabItem value="id" label="From ID" default>
+
+<code className="signature">Profile.from_id(context: <Link to="/facebook-context">FacebookContext</Link>, id: str) -> <Link to="/models/profile">Profile</Link></code>
+
+</TabItem>
+<TabItem value="username" label="From username">
+
+<code className="signature">Profile.from_username(context: <Link to="/facebook-context">FacebookContext</Link>, username: str) -> <Link to="/models/profile">Profile</Link></code>
+
+:::note
+The username is resolved to an ID using regex matching. Prefer `from_id` when possible.
+:::
+
+</TabItem>
+</Tabs>
+
+## Properties
+
+**Identity**
+
+<Props>
+  <Prop name="id" type="str">Facebook user ID.</Prop>
+  <Prop name="name" type="str | None">Display name.</Prop>
+  <Prop name="alternate_name" type="str | None">Alternate name or nickname.</Prop>
+  <Prop name="gender" type="str | None">Reported gender, e.g. <code>"MALE"</code>.</Prop>
+  <Prop name="url" type="str | None">Facebook profile URL.</Prop>
+  <Prop name="status_text" type="str | None">Short status or tagline.</Prop>
+  <Prop name="profile_picture_url" type="str | None">URL of the profile picture.</Prop>
+  <Prop name="is_verified" type="bool | None">Whether the account has a verified badge.</Prop>
+  <Prop name="followers_count" type="str | None">Follower count as a display string, e.g. <code>"6.9k"</code>.</Prop>
+  <Prop name="following_count" type="str | None">Following count as a display string, e.g. <code>"6.9k"</code>.</Prop>
+  <Prop name="friends_count" type="str | None">Friend count as a display string, e.g. <code>"4"</code>.</Prop>
+</Props>
+
+**About**
+
+<Props>
+  <Prop name="biography" type="str | None">Short bio shown on the profile.</Prop>
+  <Prop name="category" type="str | None">Page category, e.g. <code>"Gaming video creator"</code>.</Prop>
+  <Prop name="description" type="str | None">Longer profile description.</Prop>
+  <Prop name="current_location" type="str | None">Current city or location.</Prop>
+  <Prop name="hometown" type="str | None">Hometown listed on the profile.</Prop>
+  <Prop name="birthday" type="str | None">Birthday as a display string, e.g. <code>"21 January 2005"</code>.</Prop>
+</Props>
+
+**Relationship & family**
+
+<Props>
+  <Prop name="relationship" type="dict | None">
+    Relationship status as <code>{`{"type", "date", "desc"}`}</code>.
+  </Prop>
+  <Prop name="family" type="list[dict] | None">
+    Family members as <code>{`{"name", "type"}`}</code> entries.
+  </Prop>
+</Props>
+
+**Languages, links, work**
+
+<Props>
+  <Prop name="language" type="list[str] | None">Languages listed on the profile.</Prop>
+  <Prop name="links" type="list[dict] | None">
+    External links as <code>{`{"link", "desc"}`}</code> entries.
+  </Prop>
+  <Prop name="works" type="list[dict] | None">
+    Work history as <code>{`{"company", "desc"}`}</code> entries.
+  </Prop>
+</Props>
+
+**Education**
+
+<Props>
+  <Prop name="colleges" type="list[dict] | None">
+    Colleges as <code>{`{"name", "date", "subject", "activities", "dorm", "classes", "desc"}`}</code> entries.
+  </Prop>
+  <Prop name="high_schools" type="list[dict] | None">
+    High schools as <code>{`{"name", "date"}`}</code> entries.
+  </Prop>
+</Props>
+
+**Interests & travel**
+
+<Props>
+  <Prop name="hobbies" type="list[dict] | None">
+    Hobbies as <code>{`{"name", "desc"}`}</code> entries.
+  </Prop>
+  <Prop name="travels" type="list[dict] | None">
+    Places visited as <code>{`{"name", "date"}`}</code> entries.
+  </Prop>
+  <Prop name="interests" type="dict | None">
+    Interests grouped under <code>musics</code>, <code>tv_shows</code>, <code>movies</code>, <code>games</code>, and <code>sports</code>.
+  </Prop>
+</Props>
+
+**Contacts & pronunciation**
+
+<Props>
+  <Prop name="contacts" type="list[dict] | None">
+    Contact info under <code>socials</code>, <code>phones</code>, <code>emails</code>, <code>messenger</code>, <code>whatsapp_number</code>, and <code>media_kit</code>.
+  </Prop>
+  <Prop name="name_pronunciation" type="list[dict] | None">
+    Name pronunciation as <code>{`{"name"}`}</code> entries.
+  </Prop>
+  <Prop name="nicknames" type="list[dict] | None">
+    Nicknames as <code>{`{"type", "name"}`}</code> entries.
+  </Prop>
+</Props>
+
+**Business**
+
+<Props>
+  <Prop name="business_rating" type="str | None">Rating summary, e.g. <code>"4.6 (100 reviews)"</code>.</Prop>
+  <Prop name="business_address" type="str | None">Business address.</Prop>
+  <Prop name="business_hours" type="str | None">Business hours as a display string, e.g. <code>"Mon-Fri: 6am-7pm"</code>.</Prop>
+</Props>
+
+## Methods
+
+All methods return a [`PaginatedIterator`](/paginated-iterator) of model objects.
+
+<Props>
+  <Prop name="get_posts()" type="Post" href="/models/post" iterator>User's posts.</Prop>
+  <Prop name="get_photos()" type="Photo" href="/models/photo" iterator>User's photos.</Prop>
+  <Prop name="get_videos()" type="Video" href="/models/video" iterator>User's videos / reels.</Prop>
+  <Prop name="get_followers()" type="Profile" href="/models/profile" iterator>Users following this user.</Prop>
+  <Prop name="get_followees()" type="Profile" href="/models/profile" iterator>Users this user follows.</Prop>
+  <Prop name="get_friends_followers()" type="Profile" href="/models/profile" iterator>Friends of the user who also follow them.</Prop>
+  <Prop name="get_friends_followees()" type="Profile" href="/models/profile" iterator>Friends of the user whom they also follow.</Prop>
+</Props>
+
+## Example
+
+```python
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+
+user = fgs.Profile.from_id(context, id="100084254631043")
+# Or from username: user = fgs.Profile.from_username(ctx, username="Ishowspeed")
+
+
+for post in user.get_posts():
+    print(post.id, post.text)
+```

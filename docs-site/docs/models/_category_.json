@@ -1,0 +1,9 @@
+{
+  "label": "Models",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "title": "Data Models",
+    "description": "Typed wrappers returned by the scraper."
+  }
+}

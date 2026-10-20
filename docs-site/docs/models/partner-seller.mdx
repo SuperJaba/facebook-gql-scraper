@@ -1,0 +1,24 @@
+---
+id: partner-seller
+title: PartnerSeller
+sidebar_label: PartnerSeller
+slug: /models/partner-seller
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# PartnerSeller
+
+A partner Marketplace seller. Returned by [`MarketplaceListing.partner_seller`](/models/marketplace-listing#properties) on `PARTNER_LISTING` listings.
+
+## Properties
+
+<Props>
+  <Prop name="profile" type="Profile | None" href="/models/profile">The partner seller profile.</Prop>
+  <Prop name="partner_brand_name" type="str | None">Partner marketplace brand, e.g. <code>"eBay"</code>.</Prop>
+  <Prop name="seller_review_count" type="int | None">Total reviews or feedback for the partner seller.</Prop>
+  <Prop name="seller_positive_ratings_pct" type="float | None">Positive rating percentage.</Prop>
+  <Prop name="seller_member_since" type="int | None">Partner seller membership timestamp.</Prop>
+  <Prop name="number_of_sold_listings" type="int | None">Number of sold listings.</Prop>
+  <Prop name="average_ship_time" type="str | None">Average shipping time.</Prop>
+</Props>

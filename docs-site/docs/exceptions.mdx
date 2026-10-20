@@ -1,0 +1,110 @@
+---
+id: exceptions
+title: Exceptions
+sidebar_label: Exceptions
+slug: /exceptions
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# Exceptions
+
+## FacebookGqlScraperException
+
+Base class for all errors raised by this library.
+
+## Session errors
+
+<Props>
+  <Prop name="SessionExpiredError" type="Exception">
+    Facebook invalidated the session — cookies expired or were revoked. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+</Props>
+
+## GraphQL request errors
+
+<Props>
+  <Prop name="SchemaChangedError" type="Exception">
+    Facebook changed the GraphQL schema for an operation; the variables no longer match. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+  <Prop name="DocIdStillInvalidError" type="Exception">
+    Facebook rejected the doc_id even after re-discovery. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+  <Prop name="DtsgTokenStillInvalidError" type="Exception">
+    Facebook rejected the fb_dtsg token even after refresh. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+  <Prop name="DtsgTokenFetchError" type="Exception">
+    Failed to obtain the fb_dtsg token. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+</Props>
+
+## Not found errors
+
+<Props>
+  <Prop name="FacebookNotFoundError" type="Exception">
+    Base for not-found errors. The requested resource does not exist on Facebook. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+  <Prop name="ProfileNotFoundError" type="Exception">
+    The profile was not found. <br /> Inherits [`FacebookNotFoundError`](#not-found-errors).
+  </Prop>
+  <Prop name="PostNotFoundError" type="Exception">
+    The post was not found. <br /> Inherits [`FacebookNotFoundError`](#not-found-errors).
+  </Prop>
+  <Prop name="GroupNotFoundError" type="Exception">
+    The group was not found. <br /> Inherits [`FacebookNotFoundError`](#not-found-errors).
+  </Prop>
+  <Prop name="MarketplaceListingNotFoundError" type="Exception">
+    The Marketplace listing was not found. <br /> Inherits [`FacebookNotFoundError`](#not-found-errors).
+  </Prop>
+</Props>
+
+## Access errors
+
+<Props>
+  <Prop name="FacebookAccessException" type="Exception">
+    Base for access errors. Facebook refused access to the requested resource. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+  <Prop name="ResourceNotAvailableException" type="Exception">
+    The resource exists but is not exposed by this profile or group. <br /> Inherits [`FacebookAccessException`](#access-errors).
+  </Prop>
+  <Prop name="FollowersNotAvailableException" type="Exception">
+    The profile does not expose its followers list. <br /> Inherits [`ResourceNotAvailableException`](#access-errors).
+  </Prop>
+  <Prop name="FolloweesNotAvailableException" type="Exception">
+    The profile does not expose its following list. <br /> Inherits [`ResourceNotAvailableException`](#access-errors).
+  </Prop>
+  <Prop name="FriendFollowersNotAvailableException" type="Exception">
+    The profile does not expose friends with follower relationships. <br /> Inherits [`ResourceNotAvailableException`](#access-errors).
+  </Prop>
+  <Prop name="FriendFolloweesNotAvailableException" type="Exception">
+    The profile does not expose friends with following relationships. <br /> Inherits [`ResourceNotAvailableException`](#access-errors).
+  </Prop>
+  <Prop name="PhotoNotAvailableException" type="Exception">
+    The profile does not expose its photos. <br /> Inherits [`ResourceNotAvailableException`](#access-errors).
+  </Prop>
+  <Prop name="ReelsNotAvailableException" type="Exception">
+    The profile does not expose its reels. <br /> Inherits [`ResourceNotAvailableException`](#access-errors).
+  </Prop>
+</Props>
+
+## Usage errors
+
+<Props>
+  <Prop name="MissingParentError" type="Exception">
+    A model needs its parent, but none was provided — e.g. `Comment.get_replies()` without a parent `Post`. <br /> Inherits [`FacebookGqlScraperException`](#facebookgqlscraperexception).
+  </Prop>
+</Props>
+
+## Example
+
+```python
+import facebook_gql_scraper as fgs
+from facebook_gql_scraper.exceptions import ProfileNotFoundError
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+
+try:
+    user = fgs.Profile.from_username(context, username="doesnotexist123")
+except ProfileNotFoundError:
+    print("No such profile")
+```

@@ -1,0 +1,19 @@
+---
+id: reactor
+title: Reactor
+sidebar_label: Reactor
+slug: /models/reactor
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# Reactor
+
+A user who reacted to a post or comment.
+
+## Properties
+
+<Props>
+  <Prop name="reaction_type_id" type="str | None">ID of the reaction type, e.g. <code>"1635855486666999"</code> for Like.</Prop>
+  <Prop name="profile" type="Profile | None" href="/models/profile">The user who reacted.</Prop>
+</Props>

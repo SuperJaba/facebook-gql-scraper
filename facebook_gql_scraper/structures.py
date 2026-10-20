@@ -1731,16 +1731,6 @@ class Profile(FacebookModel):
         if user_id:
                 return cls.from_id(context, user_id)
 
-        # target = username
-        # engine = SearchEngine(context)
-        # for item in engine.search(username, filter_type="profile", exact_match=False):
-        #     if not isinstance(item, cls):
-        #         continue
-        #     url = (item.url or "").rstrip("/")
-        #     if url.endswith(f"/{target}"):
-        #         item._obtain_metadata()
-        #         return item
-
         raise ProfileNotFoundError(f"No profile found for username: {username}")
 
     def get_followers(self) -> PaginatedIterator["Profile"]:

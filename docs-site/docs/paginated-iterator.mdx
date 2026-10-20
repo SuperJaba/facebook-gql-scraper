@@ -1,0 +1,62 @@
+---
+id: paginated-iterator
+title: PaginatedIterator
+sidebar_label: PaginatedIterator
+slug: /paginated-iterator
+---
+
+import { Props, Prop } from '@site/src/components/Props';
+
+# PaginatedIterator
+
+A lazy, resumable iterator over paginated results.
+
+Pages are requested only when the currently buffered items have been consumed. Iteration stops when Facebook reports no further pages.
+
+Each item it yields is a full model object.
+
+## Methods
+
+<Props>
+  <Prop name="freeze()" type="FrozenPaginatedIterator" href="#frozenpaginatediterator">Snapshot the current iterator position.</Prop>
+  <Prop name="thaw(frozen)" type="None">Resume from a frozen snapshot.</Prop>
+</Props>
+
+## FrozenPaginatedIterator
+
+Serializable snapshot of a `PaginatedIterator`.
+
+Produced by `PaginatedIterator.freeze()` and consumed by `PaginatedIterator.thaw()`.
+
+## Example
+
+Iterate the first 10 posts, save the iterator position, then resume from where it stopped in a new process.
+
+```python
+import json
+import facebook_gql_scraper as fgs
+
+context = fgs.FacebookContext(cookies_file="facebook_cookies.json")
+user = fgs.Profile.from_id(context, id="100084254631043")
+
+it = user.get_posts()
+for i, post in enumerate(it):
+    print(post.id, post.text)
+    if i == 9:
+        break
+
+# Save the iterator position
+frozen = it.freeze()
+with open("resume.json", "w") as f:
+    json.dump(frozen._asdict(), f)
+
+# Resume in a new process
+with open("resume.json") as f:
+    frozen = fgs.FrozenPaginatedIterator(**json.load(f))
+
+it2 = user.get_posts()
+it2.thaw(frozen)
+
+for post in it2:
+    print(post.id, post.text)
+```
