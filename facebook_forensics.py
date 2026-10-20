@@ -1048,9 +1048,9 @@ def _generate_forensic_html_report(output_file: Path, data: dict, media_entries:
             </div>
         """)
 
-    # Tabela powiązań (Sociogram top 20)
+    # Tabela powiązań (Sociogram)
     top_associates_rows = []
-    for idx, a in enumerate(associates[:25], 1):
+    for idx, a in enumerate(associates, 1):
         friend_badge = '<span class="badge badge-success">Znajomy</span>' if a.get("is_friend") else '<span class="badge badge-warning">Zewnętrzny</span>'
         top_associates_rows.append(f"""
             <tr>
@@ -1353,7 +1353,32 @@ def _generate_forensic_html_report(output_file: Path, data: dict, media_entries:
             margin-bottom: 24px;
         }}
         table {{ width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }}
-        th {{ background: rgba(0,0,0,0.4); padding: 12px 16px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }}
+        th {{
+            background: rgba(0,0,0,0.4);
+            padding: 12px 16px;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            position: relative;
+        }}
+        th:hover {{
+            color: var(--accent);
+            background: rgba(0, 240, 255, 0.08);
+        }}
+        th.sorted-asc::after {{
+            content: " ▲";
+            color: var(--accent);
+            font-size: 10px;
+        }}
+        th.sorted-desc::after {{
+            content: " ▼";
+            color: var(--accent);
+            font-size: 10px;
+        }}
         td {{ padding: 12px 16px; border-bottom: 1px solid var(--border); }}
         tr:hover td {{ background: var(--bg-card-hover); }}
         .user-name {{ color: var(--accent); text-decoration: none; font-weight: 600; }}
@@ -1576,16 +1601,19 @@ def _generate_forensic_html_report(output_file: Path, data: dict, media_entries:
 
         <!-- TAB 3: SOCIOGRAM & ASSOCIATES -->
         <section id="tab-sociogram" class="tab-content">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>💡 <strong>Wskazówka:</strong> Kliknij w nagłówek dowolnej kolumny (np. <em>Komentarze</em>, <em>Reakcje</em>, <em>Wskaźnik Bliskości</em>, <em>Ranga</em>), aby posortować rosnąco lub malejąco.</span>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 60px;">Ranga</th>
+                            <th style="width: 70px;">Ranga</th>
                             <th>Profil Osoby Powiązanej</th>
                             <th style="width: 120px;">Relacja</th>
-                            <th class="text-center" style="width: 110px;">Komentarze</th>
-                            <th class="text-center" style="width: 110px;">Reakcje</th>
-                            <th class="text-center" style="width: 130px;">Wskaźnik Bliskości</th>
+                            <th class="text-center" style="width: 120px;">Komentarze</th>
+                            <th class="text-center" style="width: 120px;">Reakcje</th>
+                            <th class="text-center" style="width: 140px;">Wskaźnik Bliskości</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1672,6 +1700,53 @@ def _generate_forensic_html_report(output_file: Path, data: dict, media_entries:
             const lbl = document.getElementById('friendCountLabel');
             if (lbl) lbl.innerHTML = `Wyświetlono: <strong>${{visible}}</strong> z ${{cards.length}} kontaktów`;
         }}
+
+        function makeTableSortable(table) {{
+            const headers = table.querySelectorAll('th');
+            headers.forEach((th, colIdx) => {{
+                th.title = 'Kliknij, aby posortować kolumnę';
+                th.addEventListener('click', () => {{
+                    const tbody = table.querySelector('tbody');
+                    if (!tbody) return;
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    if (rows.length <= 1) return;
+
+                    const isAsc = th.classList.contains('sorted-asc');
+                    headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+
+                    const newDir = isAsc ? 'desc' : 'asc';
+                    th.classList.add(newDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+
+                    rows.sort((a, b) => {{
+                        const cellA = (a.children[colIdx]?.innerText || '').trim();
+                        const cellB = (b.children[colIdx]?.innerText || '').trim();
+
+                        const cleanA = cellA.replace(/,/g, '').replace(/[^0-9.-]/g, '');
+                        const cleanB = cellB.replace(/,/g, '').replace(/[^0-9.-]/g, '');
+                        const numA = parseFloat(cleanA);
+                        const numB = parseFloat(cleanB);
+
+                        const isNumA = !isNaN(numA) && /\\d/.test(cellA);
+                        const isNumB = !isNaN(numB) && /\\d/.test(cellB);
+
+                        let res;
+                        if (isNumA && isNumB) {{
+                            res = numA - numB;
+                        }} else {{
+                            res = cellA.localeCompare(cellB, 'pl', {{ numeric: true, sensitivity: 'base' }});
+                        }}
+                        return newDir === 'asc' ? res : -res;
+                    }});
+
+                    rows.forEach(r => tbody.appendChild(r));
+                }});
+            }});
+        }}
+
+        document.addEventListener('DOMContentLoaded', () => {{
+            document.querySelectorAll('table').forEach(makeTableSortable);
+        }});
+        document.querySelectorAll('table').forEach(makeTableSortable);
     </script>
 </body>
 </html>
