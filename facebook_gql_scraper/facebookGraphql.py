@@ -335,7 +335,7 @@ class FacebookContext:
         doc_id = self._resolve_doc_id(operation_name, reference_page_url)
         fb_dtsg = self._get_fb_dtsg()
 
-        self.progress(f"Sending FacebookGql Request ...")
+        self.progress(f"  [GQL] {operation_name} ...")
         logger.info(f"Sending FacebookGql Request ({operation_name})")
 
         payload = {
